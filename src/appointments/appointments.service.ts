@@ -19,6 +19,11 @@ import { AppointmentFile } from './entities/appointment-files.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
+import { TimeSlot } from '../time-slots/entities/time-slot.entity';
+import { TIME_SLOT_TYPES } from '../common/constants';
+import * as moment from 'moment';
+import { RRuleSet, rrulestr } from 'rrule';
+import { isTimeAfter, isTimeBefore } from '../utils/helpers';
 
 @Injectable()
 export class AppointmentsService {
@@ -43,7 +48,7 @@ export class AppointmentsService {
     });
   }
 
-  async checkAppointmentTimeAvailability(
+  private async checkAppointmentTimeAvailability(
     scheduledDate: Date,
     startTime: Date,
     endTime: Date,
@@ -66,6 +71,47 @@ export class AppointmentsService {
     }
   }
 
+  private checkAppointmentTimeSlotDateTimeRelation(
+    appointment: Appointment | AppointmentCreateDto,
+    timeslot: TimeSlot,
+  ) {
+    let isCorrectScheduledDate = !!appointment.scheduledDate;
+    if (timeslot.type === TIME_SLOT_TYPES.RECURRING) {
+      if (!timeslot.recurringRule) {
+        throw new BadRequestException(
+          'there is no recurring rule for timeslot',
+        );
+      }
+      const rruleSet = new RRuleSet();
+      const rule = rrulestr(timeslot.recurringRule, {
+        forceset: true,
+      });
+      rruleSet.rrule(rule);
+      const scheduledDate = new Date(appointment.scheduledDate);
+      const startOfScheduledDay = moment(scheduledDate).startOf('day').toDate();
+      const endOfScheduledDay = moment(scheduledDate).endOf('day').toDate();
+      isCorrectScheduledDate =
+        rule.between(startOfScheduledDay, endOfScheduledDay).length > 0;
+    } else {
+      isCorrectScheduledDate = moment(appointment.scheduledDate).isSame(
+        moment(timeslot.startDate),
+      );
+    }
+    if (!isCorrectScheduledDate) {
+      throw new BadRequestException(
+        'appointment scheduled date is not available for this timeslot',
+      );
+    }
+    const isCorrectTime: boolean =
+      isTimeAfter(appointment.startTime, timeslot.startTime) &&
+      isTimeBefore(appointment.endTime, timeslot.endTime);
+    if (!isCorrectTime) {
+      throw new BadRequestException(
+        'appointment time range is not available for this timeslot',
+      );
+    }
+  }
+
   async getAppointmentsByUser(user: User): Promise<Appointment[]> {
     return await this.appointmentRepository.find({
       where: { user },
@@ -78,14 +124,14 @@ export class AppointmentsService {
     files: Express.Multer.File[],
     appointment: Appointment,
   ): Promise<AppointmentFile[]> {
-    const fileEntitiesList = [];
-    for (const file of files) {
-      const newFileEntity = await queryRunner.manager.create(AppointmentFile, {
-        fileLink: file.path,
-        appointment,
-      });
-      fileEntitiesList.push(newFileEntity);
-    }
+    const fileEntitiesList = await Promise.all(
+      files.map((file) =>
+        queryRunner.manager.create(AppointmentFile, {
+          fileLink: file.path,
+          appointment,
+        }),
+      ),
+    );
     return await queryRunner.manager.save(fileEntitiesList);
   }
 
@@ -101,6 +147,7 @@ export class AppointmentsService {
       id: timeSlotId,
     });
 
+    this.checkAppointmentTimeSlotDateTimeRelation(data, timeSlot);
     await this.checkAppointmentTimeAvailability(
       data.scheduledDate,
       data.startTime,

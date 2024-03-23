@@ -54,8 +54,7 @@ export class UsersService {
         `user with phone number ${phoneNumber} already exist`,
       );
     }
-    const newUser = new User();
-    Object.assign(newUser, userData);
+    const newUser = await this.userRepository.create(userData);
     return await this.userRepository.save(newUser);
   }
 

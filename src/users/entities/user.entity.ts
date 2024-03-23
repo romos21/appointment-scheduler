@@ -1,16 +1,9 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  BeforeInsert,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import {
   DEFAULT_STRING_LENGTH_LIMIT,
   PHONE_LENGTH_LIMIT,
 } from '../../common/constants';
 import { Appointment } from '../../appointments/entities/appointment.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Entity('users')
 export class User {
@@ -53,9 +46,4 @@ export class User {
 
   @OneToMany(() => Appointment, (appointment) => appointment.user)
   appointments: Appointment[];
-
-  @BeforeInsert()
-  generateId() {
-    this.id = uuidv4();
-  }
 }

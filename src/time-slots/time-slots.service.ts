@@ -14,6 +14,7 @@ import { TIME_SLOT_TYPES } from '../common/constants';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TimeSlotCreateDto } from './dto/time-slot-create.dto';
 import { Appointment } from '../appointments/entities/appointment.entity';
+import { RRule, RRuleSet, rrulestr } from 'rrule';
 
 @Injectable()
 export class TimeSlotsService {
@@ -37,9 +38,38 @@ export class TimeSlotsService {
     return timeSlot;
   }
 
+  private createRecurringRule(startDate: Date) {
+    const rruleSet = new RRuleSet();
+    const rule = new RRule({
+      freq: RRule.WEEKLY,
+      dtstart: new Date(startDate),
+    });
+    rruleSet.rrule(rule);
+    return rruleSet.toString();
+  }
+
+  private updateRecurringRule(
+    currentDate: Date,
+    newDate: Date,
+    recurringRule: string,
+  ) {
+    const rruleSet = new RRuleSet();
+    const rule = rrulestr(recurringRule, {
+      forceset: true,
+    });
+    rruleSet.rrule(rule);
+    rruleSet.rdate(new Date(newDate));
+    rruleSet.exdate(new Date(currentDate));
+    return rruleSet.toString();
+  }
+
   async createTimeSlot(timeSlotData: TimeSlotCreateDto): Promise<TimeSlot> {
-    const newTimeSlot = new TimeSlot();
-    Object.assign(newTimeSlot, timeSlotData);
+    if (timeSlotData.type === TIME_SLOT_TYPES.RECURRING) {
+      timeSlotData.recurringRule = this.createRecurringRule(
+        timeSlotData.startDate,
+      );
+    }
+    const newTimeSlot = await this.timeSlotRepository.create(timeSlotData);
     return await this.timeSlotRepository.save(newTimeSlot);
   }
 
@@ -65,26 +95,25 @@ export class TimeSlotsService {
           { id },
           { startDate: newDate },
         );
-        await queryRunner.manager.update(
-          Appointment,
-          { timeSlot, scheduledDate: currentDate },
-          { scheduledDate: newDate },
-        );
       } else if (timeSlot.type === TIME_SLOT_TYPES.RECURRING) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, ...rest } = timeSlot;
-        const newTimeSlot = await queryRunner.manager.create(TimeSlot, {
-          ...rest,
-          type: TIME_SLOT_TYPES.SINGLE,
-          startDate: newDate,
-        });
-        await queryRunner.manager.save(newTimeSlot);
+        const { id, recurringRule } = timeSlot;
         await queryRunner.manager.update(
-          Appointment,
-          { timeSlot, scheduledDate: currentDate },
-          { timeSlot: newTimeSlot, scheduledDate: newDate },
+          TimeSlot,
+          { id },
+          {
+            recurringRule: this.updateRecurringRule(
+              currentDate,
+              newDate,
+              recurringRule,
+            ),
+          },
         );
       }
+      await queryRunner.manager.update(
+        Appointment,
+        { timeSlot, scheduledDate: currentDate },
+        { scheduledDate: newDate },
+      );
       await queryRunner.commitTransaction();
     } catch (err) {
       await queryRunner.rollbackTransaction();

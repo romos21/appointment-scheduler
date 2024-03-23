@@ -6,10 +6,10 @@ export class CreateAppointmentsTable1711057442051
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE appointments (
-        id uuid PRIMARY KEY,
+        id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         scheduled_date DATE NOT NULL DEFAULT CURRENT_DATE,
-        start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        end_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        start_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        end_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         description VARCHAR DEFAULT NULL,
         user_id uuid REFERENCES users (id) ON DELETE CASCADE,
         time_slot_id uuid REFERENCES time_slots (id) ON DELETE CASCADE
@@ -18,7 +18,7 @@ export class CreateAppointmentsTable1711057442051
 
     await queryRunner.query(`
       CREATE TABLE appointment_files (
-        id uuid PRIMARY KEY,
+        id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         file_link VARCHAR NOT NULL,
         appointment_id uuid REFERENCES appointments (id) ON DELETE CASCADE
       );

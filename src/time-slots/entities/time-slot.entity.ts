@@ -1,13 +1,6 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  BeforeInsert,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { TIME_SLOT_TYPES } from '../../common/constants';
 import { Appointment } from '../../appointments/entities/appointment.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Entity('time_slots')
 export class TimeSlot {
@@ -32,7 +25,7 @@ export class TimeSlot {
 
   @Column({
     name: 'start_time',
-    type: 'timestamp',
+    type: 'timestamp with time zone',
     nullable: false,
     default: () => 'CURRENT_TIMESTAMP',
   })
@@ -40,7 +33,7 @@ export class TimeSlot {
 
   @Column({
     name: 'end_time',
-    type: 'timestamp',
+    type: 'timestamp with time zone',
     nullable: false,
     default: () => 'CURRENT_TIMESTAMP',
   })
@@ -49,8 +42,11 @@ export class TimeSlot {
   @OneToMany(() => Appointment, (appointment) => appointment.timeSlot)
   appointments: Appointment[];
 
-  @BeforeInsert()
-  generateId() {
-    this.id = uuidv4();
-  }
+  @Column({
+    name: 'recurring_rule',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
+  recurringRule?: string | null;
 }

@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TIME_SLOT_TYPES } from '../../common/constants';
 import { IsAfter, IsFutureDate, IsSameDate } from '../../utils/decorators';
 
@@ -24,4 +30,8 @@ export class TimeSlotCreateDto {
   @IsAfter('startTime')
   @IsSameDate('startDate')
   endTime: Date;
+
+  @IsOptional()
+  @IsString()
+  recurringRule: string;
 }

@@ -5,13 +5,11 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-  BeforeInsert,
 } from 'typeorm';
 import { DESCRIPTION_LENGTH_LIMIT } from '../../common/constants';
 import { AppointmentFile } from './appointment-files.entity';
 import { TimeSlot } from '../../time-slots/entities/time-slot.entity';
 import { User } from '../../users/entities/user.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Entity('appointments')
 export class Appointment {
@@ -28,7 +26,7 @@ export class Appointment {
 
   @Column({
     name: 'start_time',
-    type: 'timestamp',
+    type: 'timestamp with time zone',
     nullable: false,
     default: () => 'CURRENT_TIMESTAMP',
   })
@@ -36,7 +34,7 @@ export class Appointment {
 
   @Column({
     name: 'end_time',
-    type: 'timestamp',
+    type: 'timestamp with time zone',
     nullable: false,
     default: () => 'CURRENT_TIMESTAMP',
   })
@@ -61,9 +59,4 @@ export class Appointment {
   @ManyToOne(() => User, (user) => user.appointments)
   @JoinColumn({ name: 'user_id' })
   user: User;
-
-  @BeforeInsert()
-  generateId() {
-    this.id = uuidv4();
-  }
 }
