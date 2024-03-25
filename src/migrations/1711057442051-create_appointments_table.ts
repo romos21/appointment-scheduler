@@ -12,7 +12,8 @@ export class CreateAppointmentsTable1711057442051
         end_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         description VARCHAR DEFAULT NULL,
         user_id uuid REFERENCES users (id) ON DELETE CASCADE,
-        time_slot_id uuid REFERENCES time_slots (id) ON DELETE CASCADE
+        time_slot_id uuid REFERENCES time_slots (id) ON DELETE CASCADE,
+        commute_method time_slot_commute_method_type
       );
     `);
 

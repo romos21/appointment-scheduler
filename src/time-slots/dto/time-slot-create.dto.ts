@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { TIME_SLOT_TYPES } from '../../common/constants';
+import { COMMUTE_METHOD_TYPES, TIME_SLOT_TYPES } from '../../common/constants';
 import { IsAfter, IsFutureDate, IsSameDate } from '../../utils/decorators';
 
 export class TimeSlotCreateDto {
@@ -34,4 +34,8 @@ export class TimeSlotCreateDto {
   @IsOptional()
   @IsString()
   recurringRule: string;
+
+  @IsNotEmpty()
+  @IsEnum(COMMUTE_METHOD_TYPES)
+  commuteMethod: COMMUTE_METHOD_TYPES;
 }

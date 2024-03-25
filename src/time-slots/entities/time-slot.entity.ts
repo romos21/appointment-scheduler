@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { TIME_SLOT_TYPES } from '../../common/constants';
+import { COMMUTE_METHOD_TYPES, TIME_SLOT_TYPES } from '../../common/constants';
 import { Appointment } from '../../appointments/entities/appointment.entity';
 
 @Entity('time_slots')
@@ -49,4 +49,12 @@ export class TimeSlot {
     default: null,
   })
   recurringRule?: string | null;
+
+  @Column({
+    name: 'commute_method',
+    type: 'enum',
+    enum: COMMUTE_METHOD_TYPES,
+    nullable: false,
+  })
+  commuteMethod: COMMUTE_METHOD_TYPES;
 }

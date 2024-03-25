@@ -14,7 +14,7 @@ import { FileUploaderModule } from '../file-uploader/file-uploader.module';
   imports: [
     TypeOrmModule.forFeature([Appointment, AppointmentFile]),
     FileUploaderModule.forFeature('/appointments'),
-    TimeSlotsModule,
+    forwardRef(() => TimeSlotsModule),
     forwardRef(() => UsersModule),
   ],
   exports: [AppointmentsService],

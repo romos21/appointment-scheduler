@@ -9,12 +9,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { TimeSlotsService } from './time-slots.service';
 import { TimeSlotCreateDto } from './dto/time-slot-create.dto';
-import { DeleteResult } from 'typeorm';
+import { DeleteResult, UpdateResult } from 'typeorm';
 import { TimeSlot } from './entities/time-slot.entity';
 import { TimeSlotUpdateDto } from './dto/time-slot-update.dto';
+import { TimeSlotUpdateCommuteMethodDto } from './dto/time-slot-update-commute-method.dto';
 
 @Controller('time-slots')
 export class TimeSlotsController {
@@ -58,6 +60,17 @@ export class TimeSlotsController {
       id,
       body.currentDate,
       body.newDate,
+    );
+  }
+
+  @Patch(':id/commute-method')
+  async updateCommuteMethod(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() query: TimeSlotUpdateCommuteMethodDto,
+  ): Promise<UpdateResult> {
+    return await this.timeSlotService.updateTimeSlotCommuteMethod(
+      id,
+      query.commuteMethod,
     );
   }
 }

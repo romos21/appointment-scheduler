@@ -10,6 +10,7 @@ import {
   DeleteResult,
   QueryRunner,
   Repository,
+  UpdateResult,
 } from 'typeorm';
 import { AppointmentCreateDto } from './dto/appointment-create.dto';
 import { Appointment } from './entities/appointment.entity';
@@ -20,7 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
 import { TimeSlot } from '../time-slots/entities/time-slot.entity';
-import { TIME_SLOT_TYPES } from '../common/constants';
+import { COMMUTE_METHOD_TYPES, TIME_SLOT_TYPES } from '../common/constants';
 import * as moment from 'moment';
 import { RRuleSet, rrulestr } from 'rrule';
 import { isTimeAfter, isTimeBefore } from '../utils/helpers';
@@ -160,6 +161,9 @@ export class AppointmentsService {
 
     let newAppointment;
     try {
+      if (!data.commuteMethod) {
+        data.commuteMethod = timeSlot.commuteMethod;
+      }
       newAppointment = await queryRunner.manager.create(Appointment, {
         ...data,
         timeSlot,
@@ -183,5 +187,29 @@ export class AppointmentsService {
 
   async deleteAppointment(id: string): Promise<DeleteResult> {
     return await this.appointmentRepository.delete({ id });
+  }
+
+  async updateRelatedAppointmentsCommuteMethod(
+    timeSlot: TimeSlot,
+    commuteMethod: COMMUTE_METHOD_TYPES,
+  ) {
+    return await this.appointmentRepository.update(
+      { timeSlot },
+      { commuteMethod },
+    );
+  }
+
+  async updateCommuteMethod(
+    id: string,
+    commuteMethod: COMMUTE_METHOD_TYPES,
+  ): Promise<UpdateResult> {
+    const appointment = await this.getAppointment({ id });
+    if (appointment.timeSlot.type === TIME_SLOT_TYPES.SINGLE) {
+      await this.timeSlotsService.updateCommuteMethod(
+        appointment.timeSlot.id,
+        commuteMethod,
+      );
+    }
+    return await this.appointmentRepository.update({ id }, { commuteMethod });
   }
 }

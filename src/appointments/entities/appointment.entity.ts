@@ -6,7 +6,10 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { DESCRIPTION_LENGTH_LIMIT } from '../../common/constants';
+import {
+  COMMUTE_METHOD_TYPES,
+  DESCRIPTION_LENGTH_LIMIT,
+} from '../../common/constants';
 import { AppointmentFile } from './appointment-files.entity';
 import { TimeSlot } from '../../time-slots/entities/time-slot.entity';
 import { User } from '../../users/entities/user.entity';
@@ -59,4 +62,13 @@ export class Appointment {
   @ManyToOne(() => User, (user) => user.appointments)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @Column({
+    name: 'commute_method',
+    type: 'enum',
+    enum: COMMUTE_METHOD_TYPES,
+    nullable: true,
+    default: null,
+  })
+  commuteMethod: COMMUTE_METHOD_TYPES;
 }

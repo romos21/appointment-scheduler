@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,13 +10,15 @@ import {
   DeleteResult,
   FindOptionsWhere,
   Repository,
+  UpdateResult,
 } from 'typeorm';
 import { TimeSlot } from './entities/time-slot.entity';
-import { TIME_SLOT_TYPES } from '../common/constants';
+import { COMMUTE_METHOD_TYPES, TIME_SLOT_TYPES } from '../common/constants';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TimeSlotCreateDto } from './dto/time-slot-create.dto';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { RRule, RRuleSet, rrulestr } from 'rrule';
+import { AppointmentsService } from '../appointments/appointments.service';
 
 @Injectable()
 export class TimeSlotsService {
@@ -22,6 +26,8 @@ export class TimeSlotsService {
     private dataSource: DataSource,
     @InjectRepository(TimeSlot)
     private timeSlotRepository: Repository<TimeSlot>,
+    @Inject(forwardRef(() => AppointmentsService))
+    private appointmentsService: AppointmentsService,
   ) {}
 
   async getAllTimeSlots(): Promise<TimeSlot[]> {
@@ -121,5 +127,21 @@ export class TimeSlotsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async updateCommuteMethod(id: string, commuteMethod: COMMUTE_METHOD_TYPES) {
+    return await this.timeSlotRepository.update({ id }, { commuteMethod });
+  }
+
+  async updateTimeSlotCommuteMethod(
+    id: string,
+    commuteMethod: COMMUTE_METHOD_TYPES,
+  ): Promise<UpdateResult> {
+    const timeSlot = await this.getTimeSlot({ id });
+    await this.appointmentsService.updateRelatedAppointmentsCommuteMethod(
+      timeSlot,
+      commuteMethod,
+    );
+    return await this.updateCommuteMethod(id, commuteMethod);
   }
 }

@@ -12,14 +12,16 @@ import {
   UploadedFiles,
   UseInterceptors,
   Req,
+  Patch,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { AppointmentCreateDto } from './dto/appointment-create.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { DeleteResult } from 'typeorm';
+import { DeleteResult, UpdateResult } from 'typeorm';
 import { AppointmentMapper } from './mappers/appointment.mapper';
 import { Request } from 'express';
 import { AppointmentResponseType } from '../common/types/appointment-response.type';
+import { AppointmentUpdateCommuteMethodDto } from './dto/appointment-update-commute-method.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -59,5 +61,16 @@ export class AppointmentsController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<DeleteResult> {
     return await this.appointmentsService.deleteAppointment(id);
+  }
+
+  @Patch(':id/commute-method')
+  async updateCommuteMethod(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() query: AppointmentUpdateCommuteMethodDto,
+  ): Promise<UpdateResult> {
+    return await this.appointmentsService.updateCommuteMethod(
+      id,
+      query.commuteMethod,
+    );
   }
 }
